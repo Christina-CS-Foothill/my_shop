@@ -12,7 +12,9 @@ import './providers/products_provider.dart';
 import './providers/cart.dart';
 import './providers/orders.dart';
 
-void main() => runApp(MyApp());
+void main() {
+  runApp(MyApp());
+}
 
 class MyApp extends StatelessWidget {
   @override

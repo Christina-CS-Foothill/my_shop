@@ -3,11 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:my_shop/screens/cart_screen.dart';
 import '../widgets/app_drawer.dart';
 import 'package:provider/provider.dart';
+//import 'package:http/http.dart' as http;
 
 //import 'package:my_shop/providers/products_provider.dart';
 import '../widgets/products_grid.dart';
 import '../widgets/badge.dart';
 import '../providers/cart.dart';
+import '../providers/products_provider.dart';
 
 enum FilterOptions {
   Favorites,
@@ -23,6 +25,36 @@ class ProductsOverviewScreen extends StatefulWidget {
 
 class _ProductsOverviewScreenState extends State<ProductsOverviewScreen> {
   var _showFavoritesOnly = false;
+  var _isInit = true;
+  var _isLoading = false;
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    //Provider.of<Products>(context).fetchAndSetProducts(); // WON'T WORK!
+    /*Future.delayed(Duration.zero).then((_) {
+      Provider.of<Products>(context).fetchAndSetProducts();
+    });*/ // This works but is considered a "hack" or something idk
+    super.initState();
+  }
+
+  @override
+  void didChangeDependencies() {
+    //yet another approach for loading products that works
+    if (_isInit) {
+      setState(() {
+        _isLoading = true;
+      });
+
+      Provider.of<Products>(context).fetchAndSetProducts().then((_) {
+        setState(() {
+          _isLoading = false;
+        });
+      });
+    }
+    _isInit = false;
+    super.didChangeDependencies();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -72,9 +104,13 @@ class _ProductsOverviewScreenState extends State<ProductsOverviewScreen> {
         ],
       ),
       drawer: const AppDrawer(),
-      body: ProductsGrid(
-        showFavs: _showFavoritesOnly,
-      ),
+      body: _isLoading
+          ? const Center(
+              child: CircularProgressIndicator(),
+            )
+          : ProductsGrid(
+              showFavs: _showFavoritesOnly,
+            ),
     );
   }
 }

@@ -63,6 +63,9 @@ class Products with ChangeNotifier {
   ];
 
   //var _showFavoritesOnly = false;
+  final String authToken;
+
+  Products(this.authToken, this._items);
 
   List<Product> get items {
     /*if (_showFavoritesOnly) {
@@ -90,12 +93,19 @@ class Products with ChangeNotifier {
   }*/
 
   Future<void> fetchAndSetProducts() async {
+    print(authToken);
     final url = Uri.https(
-        'udemy-course-myshop-default-rtdb.firebaseio.com', '/products.json');
+      'udemy-course-myshop-default-rtdb.firebaseio.com',
+      '/products.json',
+      {'auth': '$authToken'},
+    );
 
     try {
       final response = await http.get(url);
       final extractedData = json.decode(response.body) as Map<String, dynamic>;
+      if (extractedData == null) {
+        return;
+      }
       final List<Product> loadedProducts = [];
       extractedData.forEach((prodId, prodData) {
         loadedProducts.add(Product(
@@ -108,7 +118,7 @@ class Products with ChangeNotifier {
       });
       _items = loadedProducts;
       notifyListeners();
-      print(json.decode(response.body));
+      //print(json.decode(response.body));
     } catch (error) {
       rethrow;
     }
@@ -116,7 +126,10 @@ class Products with ChangeNotifier {
 
   Future<void> addProduct(Product product) async {
     final url = Uri.https(
-        'udemy-course-myshop-default-rtdb.firebaseio.com', '/products.json');
+      'udemy-course-myshop-default-rtdb.firebaseio.com',
+      '/products.json',
+      {'auth': '$authToken'},
+    );
     try {
       final response = await http.post(
         url,
@@ -155,8 +168,11 @@ class Products with ChangeNotifier {
   Future<void> updateProduct(String id, Product newProduct) async {
     final prodIndex = _items.indexWhere((prod) => prod.id == id);
     if (prodIndex >= 0) {
-      final url = Uri.https('udemy-course-myshop-default-rtdb.firebaseio.com',
-          '/products/$id.json');
+      final url = Uri.https(
+        'udemy-course-myshop-default-rtdb.firebaseio.com',
+        '/products/$id.json',
+        {'auth': '$authToken'},
+      );
       await http.patch(url,
           body: json.encode({
             'title': newProduct.title,
@@ -172,8 +188,11 @@ class Products with ChangeNotifier {
   }
 
   Future<void> deleteProduct(String id) async {
-    final url = Uri.https('udemy-course-myshop-default-rtdb.firebaseio.com',
-        '/products/$id.json');
+    final url = Uri.https(
+      'udemy-course-myshop-default-rtdb.firebaseio.com',
+      '/products/$id.json',
+      {'auth': '$authToken'},
+    );
 
     //called an 'optimistic updating' approach, readds to local memory the product
     //if deleting from the server fails

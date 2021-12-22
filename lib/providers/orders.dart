@@ -22,7 +22,8 @@ class OrderItem {
 class Orders with ChangeNotifier {
   List<OrderItem> _orders = [];
   final String authToken;
-  Orders(this.authToken, this._orders);
+  final String userId;
+  Orders(this.authToken, this.userId, this._orders);
 
   List<OrderItem> get orders {
     //essentially just returning a copy of the orders list
@@ -34,7 +35,7 @@ class Orders with ChangeNotifier {
   Future<void> fetchAndSetOrders() async {
     final url = Uri.https(
       'udemy-course-myshop-default-rtdb.firebaseio.com',
-      '/orders.json',
+      '/orders/$userId.json',
       {'auth': '$authToken'},
     );
     final response = await http.get(url);
@@ -69,7 +70,7 @@ class Orders with ChangeNotifier {
   Future<void> addOrder(List<CartItem> cartProducts, double total) async {
     final url = Uri.https(
       'udemy-course-myshop-default-rtdb.firebaseio.com',
-      '/orders.json',
+      '/orders/$userId.json',
       {'auth': '$authToken'},
     );
     final timeStamp = DateTime.now();

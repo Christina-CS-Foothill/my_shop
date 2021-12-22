@@ -6,17 +6,44 @@ import '../providers/products_provider.dart';
 import '../widgets/user_product_item.dart';
 import '../widgets/app_drawer.dart';
 
-class UserProductsScreen extends StatelessWidget {
+class UserProductsScreen extends StatefulWidget {
   static const routeName = '/user-products';
-  const UserProductsScreen({Key key}) : super(key: key);
+
+  @override
+  State<UserProductsScreen> createState() => _UserProductsScreenState();
+}
+
+class _UserProductsScreenState extends State<UserProductsScreen> {
+  var _isInit = true;
+  var _isLoading = false;
 
   Future<void> _refreshProducts(BuildContext context) async {
-    await Provider.of<Products>(context, listen: false).fetchAndSetProducts();
+    await Provider.of<Products>(context, listen: false)
+        .fetchAndSetProducts(true);
+  }
+
+  @override
+  void didChangeDependencies() {
+    //yet another approach for loading products that works
+    if (_isInit) {
+      setState(() {
+        _isLoading = true;
+      });
+
+      Provider.of<Products>(context).fetchAndSetProducts(true).then((_) {
+        setState(() {
+          _isLoading = false;
+        });
+      });
+    }
+    _isInit = false;
+    super.didChangeDependencies();
   }
 
   @override
   Widget build(BuildContext context) {
     final productsData = Provider.of<Products>(context);
+    print('rebuilding...');
     return Scaffold(
       appBar: AppBar(
         title: const Text('Your Products'),
@@ -30,25 +57,29 @@ class UserProductsScreen extends StatelessWidget {
         ],
       ),
       drawer: const AppDrawer(),
-      body: RefreshIndicator(
-        onRefresh: () => _refreshProducts(context),
-        child: Padding(
-          padding: const EdgeInsets.all(8),
-          child: ListView.builder(
-            itemCount: productsData.items.length,
-            itemBuilder: (_, i) => Column(
-              children: <Widget>[
-                UserProductItem(
-                  id: productsData.items[i].id,
-                  title: productsData.items[i].title,
-                  imageUrl: productsData.items[i].imageUrl,
+      body: _isLoading
+          ? const Center(
+              child: CircularProgressIndicator(),
+            )
+          : RefreshIndicator(
+              onRefresh: () => _refreshProducts(context),
+              child: Padding(
+                padding: const EdgeInsets.all(8),
+                child: ListView.builder(
+                  itemCount: productsData.items.length,
+                  itemBuilder: (_, i) => Column(
+                    children: <Widget>[
+                      UserProductItem(
+                        id: productsData.items[i].id,
+                        title: productsData.items[i].title,
+                        imageUrl: productsData.items[i].imageUrl,
+                      ),
+                      const Divider(),
+                    ],
+                  ),
                 ),
-                const Divider(),
-              ],
+              ),
             ),
-          ),
-        ),
-      ),
     );
   }
 }

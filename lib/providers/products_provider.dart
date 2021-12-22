@@ -64,8 +64,9 @@ class Products with ChangeNotifier {
 
   //var _showFavoritesOnly = false;
   final String authToken;
+  final String userId;
 
-  Products(this.authToken, this._items);
+  Products(this.authToken, this.userId, this._items);
 
   List<Product> get items {
     /*if (_showFavoritesOnly) {
@@ -92,12 +93,23 @@ class Products with ChangeNotifier {
     notifyListeners();
   }*/
 
-  Future<void> fetchAndSetProducts() async {
-    print(authToken);
-    final url = Uri.https(
+  //square brackets around a parameter make it optional, but make sure
+  //to provide a default value
+  Future<void> fetchAndSetProducts([bool filterByUser = false]) async {
+    final filterMap = filterByUser
+        ? {
+            'auth': '$authToken',
+            'orderBy': '"creatorId"',
+            'equalTo': '"$userId"',
+          }
+        : {
+            'auth': '$authToken',
+          };
+
+    var url = Uri.https(
       'udemy-course-myshop-default-rtdb.firebaseio.com',
       '/products.json',
-      {'auth': '$authToken'},
+      filterMap,
     );
 
     try {
@@ -106,6 +118,14 @@ class Products with ChangeNotifier {
       if (extractedData == null) {
         return;
       }
+      url = Uri.https(
+        'udemy-course-myshop-default-rtdb.firebaseio.com',
+        '/userFavorites/$userId.json',
+        {'auth': '$authToken'},
+      );
+      final favoriteResponse = await http.get(url);
+      final favoriteData = json.decode(favoriteResponse.body);
+      //print(favoriteData);
       final List<Product> loadedProducts = [];
       extractedData.forEach((prodId, prodData) {
         loadedProducts.add(Product(
@@ -113,7 +133,8 @@ class Products with ChangeNotifier {
             title: prodData['title'],
             description: prodData['description'],
             price: prodData['price'],
-            isFavorite: prodData['isFavorite'],
+            isFavorite:
+                favoriteData == null ? false : favoriteData[prodId] ?? false,
             imageUrl: prodData['imageUrl']));
       });
       _items = loadedProducts;
@@ -138,7 +159,7 @@ class Products with ChangeNotifier {
           'description': product.description,
           'imageUrl': product.imageUrl,
           'price': product.price,
-          'isFavorite': product.isFavorite,
+          'creatorId': userId,
         }),
       );
       //_items.add(value);

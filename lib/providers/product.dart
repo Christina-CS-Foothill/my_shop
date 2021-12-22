@@ -21,24 +21,31 @@ class Product with ChangeNotifier {
     this.isFavorite = false,
   });
 
-  Future<void> toggleFavoriteStatus(String token) async {
+  Future<void> toggleFavoriteStatus(String token, String userId) async {
     final url = Uri.https(
       'udemy-course-myshop-default-rtdb.firebaseio.com',
-      '/products/$id.json',
+      '/userFavorites/$userId/$id.json',
       {'auth': '$token'},
     );
+
     var prevFavoriteStatus = isFavorite;
     isFavorite = !isFavorite;
     notifyListeners();
-    final response = await http.patch(url,
-        body: json.encode({
-          'isFavorite': isFavorite,
-        }));
-    if (response.statusCode >= 400) {
+
+    try {
+      final response = await http.put(url,
+          body: json.encode(
+            isFavorite,
+          ));
+      if (response.statusCode >= 400) {
+        isFavorite = prevFavoriteStatus;
+        notifyListeners();
+        //throw HttpException('Could not favorite this product.');
+      }
+      //prevFavoriteStatus = null;
+    } catch (error) {
       isFavorite = prevFavoriteStatus;
       notifyListeners();
-      throw HttpException('Could not favorite this product.');
     }
-    prevFavoriteStatus = null;
   }
 }
